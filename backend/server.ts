@@ -9,14 +9,14 @@ import communityRoutes from "./routes/community.ts";
 import paymentRoutes from "./routes/payments.ts";
 import projectRoutes from "./routes/projects.ts";
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 const app = express();
 
 // CORS — allow the frontend (Vite dev server) to call this API.
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   }),
 );
