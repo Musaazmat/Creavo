@@ -90,7 +90,6 @@ Before you begin, make sure you have:
 
 ```bash
 git clone https://github.com/Musaazmat/Creavo.git
-# cd AI
 ```
 
 ### 2) Install Backend Dependencies
