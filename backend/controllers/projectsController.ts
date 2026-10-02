@@ -9,7 +9,7 @@ import type {
   UpdateProjectBody,
 } from "../types/api.ts";
 import type { AuthenticatedRequest } from "../types/requests.ts";
-import { generateAppFiles } from "../utils/appGenerator.ts";
+// import { generateAppFiles } from "../utils/appGenerator.ts";
 import { generateMockSite } from "../utils/mockGenerator.ts";
 import { enhancePrompt, generateSite, postProcess } from "../utils/services.ts";
 
@@ -73,8 +73,8 @@ export async function create(
       typeof req.body.prompt === "string" ? req.body.prompt.trim() : "";
     const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
     const requestedFramework = req.body.framework ?? "html";
-    if (!["html", "react", "nextjs"].includes(requestedFramework)) {
-      return res.status(400).json({ error: "Unsupported project framework." });
+    if (requestedFramework !== "html") {
+      return res.status(400).json({ error: "Only HTML projects are currently supported." });
     }
     if (!prompt) return res.status(400).json({ error: "Prompt is required." });
     if (prompt.length > 2000)
@@ -104,6 +104,9 @@ export async function get(
   try {
     const project = await loadOwnedProject(req, res);
     if (!project) return;
+    if (project.framework !== "html") {
+      return res.status(400).json({ error: "Only HTML projects are currently supported." });
+    }
     res.json({ project: project.toClient() });
   } catch (err) {
     next(err);
@@ -276,15 +279,18 @@ export async function generate(
           "The AI was busy just now, so I used a starter template — please try again in a moment.";
       }
     } else {
-      const appResult = await generateAppFiles(
-        project.framework,
-        brief,
-        { previousFiles: project.sourceFiles, history: project.messages },
-      );
+      // React and Next.js project generation is temporarily disabled.
+      /*
+      const appResult = await generateAppFiles(project.framework, brief, {
+        previousFiles: project.sourceFiles,
+        history: project.messages,
+      });
       project.sourceFiles = appResult.files;
       outcome = appResult.source === "llm" ? "saved" : "template";
       assistantText = appResult.summary;
       chargeCredits = outcome === "saved";
+      */
+      return res.status(400).json({ error: "Only HTML projects are currently supported." });
     }
 
     if (outcome !== "saved") {

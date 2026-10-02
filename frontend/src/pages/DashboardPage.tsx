@@ -263,11 +263,11 @@ function PromptBox({
         <p className={s.promptSub}>
           Describe your idea in plain English. We'll do the rest.
         </p>
-        <div className={s.frameworkSelectorRow}>
+        {/* <div className={s.frameworkSelectorRow}>
           <label htmlFor="project-framework" className={s.frameworkSelectorLabel}>
-            Build with
-          </label>
-          <select
+            Build with Creavo
+          </label> */}
+          {/* <select
             id="project-framework"
             value={framework}
             onChange={(event) =>
@@ -276,10 +276,11 @@ function PromptBox({
             className={s.frameworkSelector}
           >
             <option value="html">HTML</option>
+            React and Next.js generation are temporarily disabled.
             <option value="react">React</option>
             <option value="nextjs">Next.js</option>
-          </select>
-        </div>
+          </select> */}
+        {/* </div> */}
         {needsTopUp && (
           <div className={s.creditsWarning}>
             <Zap className={s.creditsWarningIcon} />
