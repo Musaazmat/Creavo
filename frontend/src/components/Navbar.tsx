@@ -1,9 +1,10 @@
-// Navbar — top navigation bar with links and the signed-in account menu.
-import { LogOut, Menu, Plus, Settings, X, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { LogOut, Menu, Plus, Settings, Sparkles, Zap } from "lucide-react";
+import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { navbarStyles as s } from "../assets/dummyStyles";
-import { Logo } from "../assets/ui";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "../context/AuthContext";
 
 const links = [
@@ -13,223 +14,45 @@ const links = [
   { label: "Pricing", to: "/pricing" },
 ];
 
-// Account links shared by the desktop dropdown and the mobile menu.
-const accountLinks = [
-  { label: "Buy credits", icon: Zap, to: "/pricing", iconClass: s.accountIconIndigo },
-  { label: "Settings", icon: Settings, to: "/settings" },
-];
-
-// Main navigation bar: logo, page links, and sign-in buttons or account menu.
 export default function Navbar() {
   const navigate = useNavigate();
   const { user, logoutUser } = useAuth();
-  const isAuthed = Boolean(user);
-  const [open, setOpen] = useState(false);
-  const visibleLinks = links.filter((l) => !l.protected || isAuthed);
+  const visibleLinks = links.filter((link) => !link.protected || user);
+  const initials = (user?.name || user?.email || "U").split(/\s+/).map((word) => word[0]).slice(0, 2).join("").toUpperCase();
+
+  const signOut = () => { logoutUser(); navigate("/"); };
 
   return (
-    <nav className={s.root}>
-      <div className={s.container}>
-        <Logo />
-
-        {/* Center links (desktop) */}
-        <div className={s.centerLinks}>
-          {visibleLinks.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              end={l.to === "/"}
-              className={({ isActive }) =>
-                `${s.navLinkBase} ${isActive ? s.navLinkActive : s.navLinkInactive}`
-              }
-            >
-              {l.label}
-            </NavLink>
-          ))}
+    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+        <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Sparkles className="size-4" /></span>
+          Creova
+        </Link>
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary navigation">
+          {visibleLinks.map((link) => <NavLink key={link.to} to={link.to} end={link.to === "/"} className={({ isActive }) => `rounded-md px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>{link.label}</NavLink>)}
+        </nav>
+        <div className="ml-auto hidden items-center gap-2 md:flex">
+          {user ? <>
+            <Button variant="outline" size="sm" onClick={() => navigate("/pricing")}><Zap data-icon="inline-start" />{user.credits ?? 0}<Plus data-icon="inline-end" /></Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon" aria-label="Open account menu"><Avatar className="size-8"><AvatarFallback>{initials}</AvatarFallback></Avatar></Button>} />
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5"><p className="text-sm font-medium">{user.name}</p><p className="truncate text-xs text-muted-foreground">{user.email}</p></div>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup><DropdownMenuItem onClick={() => navigate("/pricing")}><Zap data-icon="inline-start" />Buy credits</DropdownMenuItem><DropdownMenuItem onClick={() => navigate("/settings")}><Settings data-icon="inline-start" />Settings</DropdownMenuItem></DropdownMenuGroup>
+                <DropdownMenuSeparator /><DropdownMenuItem onClick={signOut}><LogOut data-icon="inline-start" />Sign out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </> : <><Button variant="ghost" asChild><Link to="/login">Sign in</Link></Button><Button asChild><Link to="/register">Get started</Link></Button></>}
         </div>
-
-        {/* Right side (desktop) */}
-        <div className={s.desktopRight}>
-          {isAuthed ? (
-            <UserMenu />
-          ) : (
-            <>
-              <Link to="/login" className={s.signInLink}>
-                Sign in
-              </Link>
-              <button
-                onClick={() => navigate("/register")}
-                className={`${s.btnPrimary} text-[13px] px-4 py-2`}
-              >
-                Get started
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Hamburger (mobile) */}
-        <button
-          className={s.hamburger}
-          onClick={() => setOpen(!open)}
-          aria-label="Toggle menu"
-        >
-          {open ? <X className={s.hamburgerIcon} /> : <Menu className={s.hamburgerIcon} />}
-        </button>
+        <Sheet>
+          <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" aria-label="Open navigation"><Menu /></Button>} />
+          <SheetContent side="right"><SheetTitle>Navigation</SheetTitle><div className="flex flex-col gap-2 pt-6">{visibleLinks.map((link) => <Button key={link.to} variant="ghost" className="justify-start" asChild><Link to={link.to}>{link.label}</Link></Button>)}<div className="my-2 border-t" />{user ? <Button variant="ghost" className="justify-start" onClick={signOut}><LogOut data-icon="inline-start" />Sign out</Button> : <><Button variant="ghost" className="justify-start" asChild><Link to="/login">Sign in</Link></Button><Button asChild><Link to="/register">Get started</Link></Button></>}</div></SheetContent>
+        </Sheet>
       </div>
-
-      {/* Mobile menu */}
-      {open && (
-        <div className={s.mobileMenu}>
-          {visibleLinks.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              onClick={() => setOpen(false)}
-              className={s.mobileLink}
-            >
-              {l.label}
-            </Link>
-          ))}
-
-          <div className={s.mobileDivider}>
-            {isAuthed ? (
-              <>
-                {accountLinks.map(({ label, icon: Icon, to, iconClass }) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={() => setOpen(false)}
-                    className={s.mobileAccountLink}
-                  >
-                    <Icon className={`${s.iconSm} ${iconClass || ""}`} /> {label}
-                  </Link>
-                ))}
-                <button
-                  onClick={() => {
-                    logoutUser();
-                    setOpen(false);
-                    navigate("/");
-                  }}
-                  className={s.mobileSignOut}
-                >
-                  <LogOut className={s.iconSm} /> Sign out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  onClick={() => setOpen(false)}
-                  className={s.mobileLink}
-                >
-                  Sign in
-                </Link>
-                <button
-                  onClick={() => {
-                    navigate("/register");
-                    setOpen(false);
-                  }}
-                  className={`${s.btnPrimary} ${s.mobileGetStarted}`}
-                >
-                  Get started
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </nav>
+    </header>
   );
 }
 
-// The signed-in account dropdown (credits pill + avatar + menu), desktop only.
-function UserMenu() {
-  const navigate = useNavigate();
-  const { user, logoutUser } = useAuth();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  // Close the dropdown when you click outside it.
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (
-        ref.current &&
-        e.target instanceof Node &&
-        !ref.current.contains(e.target)
-      ) {
-        setOpen(false);
-      }
-    };
-    window.addEventListener("mousedown", onClick);
-    return () => window.removeEventListener("mousedown", onClick);
-  }, []);
-
-  if (!user) return null;
-
-  const initials = (user.name || user.email || "U")
-    .split(/\s+/)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
-  return (
-    <div ref={ref} className={s.userMenuWrapper}>
-      {/* Credits pill */}
-      <button
-        onClick={() => navigate("/pricing")}
-        title="Buy more credits"
-        className={s.creditsPill}
-      >
-        <Zap className={s.creditsIcon} />
-        <span className={s.creditsLabel}>Credits :</span>
-        <span className={s.creditsNumber}>{user.credits ?? 0}</span>
-        <Plus className={s.plusIcon} />
-      </button>
-
-      {/* Avatar */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Account menu"
-        className={s.avatar}
-      >
-        {initials}
-      </button>
-
-      {/* Dropdown */}
-      {open && (
-        <div className={s.dropdown}>
-          <div className={s.dropdownHeader}>
-            <div className={s.avatar}>{initials}</div>
-            <div className={s.dropdownUserInfo}>
-              <p className={s.dropdownUserName}>{user.name}</p>
-              <p className={s.dropdownUserEmail}>{user.email}</p>
-            </div>
-          </div>
-          <div className={s.dropdownBody}>
-            {accountLinks.map(({ label, icon: Icon, to, iconClass }) => (
-              <Link
-                key={to}
-                to={to}
-                onClick={() => setOpen(false)}
-                className={s.dropdownItem}
-              >
-                <Icon className={`${s.iconMd} ${iconClass || ""}`} /> {label}
-              </Link>
-            ))}
-            <button
-              onClick={() => {
-                logoutUser();
-                setOpen(false);
-                navigate("/");
-              }}
-              className={s.dropdownSignOut}
-            >
-              <LogOut className={s.iconMd} /> Sign Out
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+export { Navbar };
